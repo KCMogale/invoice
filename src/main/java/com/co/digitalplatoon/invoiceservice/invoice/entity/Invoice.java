@@ -1,32 +1,51 @@
 package com.co.digitalplatoon.invoiceservice.invoice.entity;
 
-import javax.persistence.Entity;
-import javax.persistence.GeneratedValue;
-import javax.persistence.GenerationType;
-import javax.persistence.Id;
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
+import javax.persistence.*;
 import java.math.BigDecimal;
-import java.util.ArrayList;
+import java.math.RoundingMode;
 import java.util.Date;
+import java.util.List;
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class Invoice {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
-    private long id;
+    @GeneratedValue
+    private Long id;
 
-    private ArrayList<LineItem> lineItems;
     private String client;
-    private long vatRate;
+    private Long vatRate;
     private Date invoiceDate;
-    private BigDecimal vat;
 
-    public long getId() {
+    public Invoice(String client, Long vatRate, Date invoiceDate) {
+        this.client = client;
+        this.vatRate = vatRate;
+        this.invoiceDate = invoiceDate;
+    }
+
+    public Invoice() {  }
+
+    @OneToMany(mappedBy = "invoice")
+    private List<LineItem> lineItems;
+
+    public Long getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(Long id) {
         this.id = id;
+    }
+
+    public List<LineItem> getLineItems() {
+        return lineItems;
+    }
+
+    public void setLineItems(List<LineItem> lineItems) {
+        this.lineItems = lineItems;
     }
 
     public String getClient() {
@@ -37,11 +56,11 @@ public class Invoice {
         this.client = client;
     }
 
-    public long getVatRate() {
+    public Long getVatRate() {
         return vatRate;
     }
 
-    public void setVatRate(long vatRate) {
+    public void setVatRate(Long vatRate) {
         this.vatRate = vatRate;
     }
 
@@ -53,29 +72,26 @@ public class Invoice {
         this.invoiceDate = invoiceDate;
     }
 
+    @Transient
     public BigDecimal getVat() {
-        return vat;
+        BigDecimal vatValue = new BigDecimal(0);
+        if (vatRate != null) {
+            vatValue = getSubTotal().multiply(BigDecimal.valueOf(vatRate/100));
+        }
+        return vatValue.setScale(2, RoundingMode.HALF_UP);
     }
 
-    public void setVat(BigDecimal vat) {
-        this.vat = vat;
-    }
-
+    @Transient
     public BigDecimal getTotal() {
-        BigDecimal invoiceTotal = BigDecimal.valueOf(BigDecimal.ROUND_CEILING);
-        for (LineItem lineItem : lineItems) {
-            BigDecimal bigDecimal = BigDecimal.ZERO;
-            invoiceTotal = bigDecimal.add(lineItem.getLineItemTotal());
-        }
-        return invoiceTotal;
+        return getSubTotal().add(getVat()).setScale(2, RoundingMode.HALF_UP);
     }
 
+    @Transient
     public BigDecimal getSubTotal() {
-        BigDecimal subTotal = BigDecimal.valueOf(BigDecimal.ROUND_CEILING);
+        BigDecimal subTotal = new BigDecimal(0);
         for (LineItem lineItem : lineItems) {
-            subTotal = lineItem.getUnitPrice().multiply(BigDecimal.valueOf(lineItem.getQuantity()));
+            subTotal = subTotal.add(lineItem.getLineItemTotal());
         }
-        return subTotal;
+        return subTotal.setScale(2, RoundingMode.HALF_UP);
     }
-
 }

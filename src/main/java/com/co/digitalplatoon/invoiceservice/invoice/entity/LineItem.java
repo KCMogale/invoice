@@ -1,16 +1,22 @@
 package com.co.digitalplatoon.invoiceservice.invoice.entity;
 
+import com.fasterxml.jackson.annotation.JsonIdentityInfo;
+import com.fasterxml.jackson.annotation.ObjectIdGenerators;
+
 import javax.persistence.*;
 import java.math.BigDecimal;
+import java.math.RoundingMode;
 
 @Entity
+@JsonIdentityInfo(generator = ObjectIdGenerators.PropertyGenerator.class, property = "id")
 public class LineItem {
 
     @Id
-    @GeneratedValue(strategy = GenerationType.AUTO)
+    @GeneratedValue
     private Long id;
 
-    @ManyToOne(targetEntity = Invoice.class)
+    @ManyToOne
+    @JoinColumn(name = "invoice")
     private Invoice invoice;
 
     private Long quantity;
@@ -57,8 +63,13 @@ public class LineItem {
         this.unitPrice = unitPrice;
     }
 
+    @Transient
     public BigDecimal getLineItemTotal() {
-        return BigDecimal.valueOf(quantity).multiply(unitPrice);
+        BigDecimal lineItemValue = new BigDecimal(0);
+        if (quantity != null && unitPrice != null) {
+            lineItemValue = lineItemValue.add(unitPrice).multiply(new BigDecimal(quantity));
+        }
+        return lineItemValue.setScale(2, RoundingMode.HALF_UP);
     }
 
 
