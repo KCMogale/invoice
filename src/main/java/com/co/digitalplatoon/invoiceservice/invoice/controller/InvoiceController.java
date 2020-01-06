@@ -5,7 +5,6 @@ import com.co.digitalplatoon.invoiceservice.invoice.entity.Invoice;
 import com.co.digitalplatoon.invoiceservice.invoice.exception.ResourceException;
 import com.co.digitalplatoon.invoiceservice.invoice.service.impl.InvoiceServiceImpl;
 import org.springframework.beans.factory.annotation.Autowired;
-import org.springframework.http.ResponseEntity;
 import org.springframework.web.bind.annotation.*;
 
 import java.util.List;
@@ -26,8 +25,10 @@ public class InvoiceController {
     }
 
     @GetMapping("/invoices/{invoiceId}")
-    public ResponseEntity<Invoice> viewInvoice(@PathVariable(value = "invoiceId") Long invoiceId) {
-        return ResponseEntity.ok().body(invoiceService.viewInvoice(invoiceId));
+    public Invoice viewInvoice(@PathVariable(value = "invoiceId") Long invoiceId) throws ResourceException {
+        return invoiceService.viewInvoice(invoiceId).orElseThrow(
+                () -> new ResourceException("Invoice not found with invoiceId " + invoiceId)
+        );
     }
 
     @PostMapping("/invoices")
