@@ -42,6 +42,7 @@ public class InvoiceControllerTest {
 
     @Test
     public void viewAllInvoices() {
+        System.out.println(invoiceService);
     }
 
     @Test
